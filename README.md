@@ -93,7 +93,7 @@ Quizly/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<YOUR_GITHUB_USERNAME>/Quizly.git
+   git clone https://github.com/MD-Abran-Ahmed/Quizly.git
    cd Quizly
    ```
 
@@ -197,4 +197,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
-Feel free to check the [issues page](https://github.com/<YOUR_GITHUB_USERNAME>/Quizly/issues) if you want to contribute.
+Feel free to check the [issues page](https://github.com/MD-Abran-Ahmed/Quizly/issues) if you want to contribute.
