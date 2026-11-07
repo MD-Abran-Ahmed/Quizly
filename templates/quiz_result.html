@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Results: {{ quiz.title }} – Quizly{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="quiz-viewport" style="padding-top: 3.5rem;">
+
+  <!-- Header Breadcrumb -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <a href="{{ url_for('dashboard_page') }}" class="btn btn-sm btn-glass">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <div class="glass-badge">{{ quiz.difficulty }} &bull; {{ quiz.document.original_filename if quiz.document else 'Study Notes' }}</div>
+  </div>
+
+  <!-- Score Summary Hero Card -->
+  <div class="results-card glass-panel tilt-card">
+    <div class="glass-badge" style="margin-bottom: 1.2rem;">Assessment Complete</div>
+    <h1 style="font-size: 2.2rem; margin-bottom: 0.4rem;">{{ quiz.title }}</h1>
+    <p style="margin-bottom: 2rem;">Attempt completed on {{ attempt.completed_at.strftime('%B %d, %Y at %H:%M UTC') }}</p>
+
+    <!-- Animated Radial Percentage Ring -->
+    <div class="score-radial-wrapper">
+      <svg class="score-radial-svg" viewBox="0 0 160 160">
+        <defs>
+          <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F4F0E6"/>
+            <stop offset="100%" stop-color="#D6BC83"/>
+          </linearGradient>
+        </defs>
+        <circle class="score-radial-bg" cx="80" cy="80" r="70" />
+        <circle id="resultRadialBar" class="score-radial-bar" cx="80" cy="80" r="70" data-percent="{{ attempt.percentage }}" />
+      </svg>
+      <div class="score-radial-number">
+        <span class="score-percent">{{ attempt.percentage|round(1) }}%</span>
+        <span class="score-fraction">{{ attempt.score }} / {{ attempt.total_questions }}</span>
+      </div>
+    </div>
+
+    <!-- Performance Feedback Badge -->
+    <div style="margin-bottom: 2.2rem;">
+      {% if attempt.percentage >= 80 %}
+        <span class="glass-badge" style="background: rgba(106, 195, 136, 0.15); border-color: rgba(106, 195, 136, 0.4); color: #8BE4A6; font-size: 0.95rem; padding: 0.5rem 1.4rem;">
+          &#10024; Excellent Performance &bull; Deep Mastery
+        </span>
+      {% elif attempt.percentage >= 60 %}
+        <span class="glass-badge" style="background: rgba(214, 188, 131, 0.15); border-color: rgba(214, 188, 131, 0.4); color: var(--gold-light); font-size: 0.95rem; padding: 0.5rem 1.4rem;">
+          &#128077; Good Progress &bull; Solid Understanding
+        </span>
+      {% else %}
+        <span class="glass-badge" style="background: rgba(229, 115, 115, 0.15); border-color: rgba(229, 115, 115, 0.4); color: #FFA4A4; font-size: 0.95rem; padding: 0.5rem 1.4rem;">
+          &#128218; Needs More Practice &bull; Review Below
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- 3 Core Stats -->
+    <div class="results-stats-row">
+      <div class="result-stat-box">
+        <h6>Correct Answers</h6>
+        <p style="color: #8BE4A6;">{{ attempt.score }}</p>
+      </div>
+      <div class="result-stat-box">
+        <h6>Incorrect Answers</h6>
+        <p style="color: #FFA4A4;">{{ attempt.total_questions - attempt.score }}</p>
+      </div>
+      <div class="result-stat-box">
+        <h6>Time Taken</h6>
+        <p>
+          {% set mins = (attempt.time_taken_seconds // 60) %}
+          {% set secs = (attempt.time_taken_seconds % 60) %}
+          {{ mins }}m {{ secs }}s
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+      <a href="{{ url_for('take_quiz_page', quiz_id=quiz.id) }}" class="btn btn-primary">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Retake Quiz</span>
+      </a>
+
+      {% if quiz.document_id %}
+        <a href="{{ url_for('quiz_setup_page', doc_id=quiz.document_id) }}" class="btn btn-glass">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Generate Another Quiz</span>
+        </a>
+      {% endif %}
+
+      <a href="{{ url_for('dashboard_page') }}" class="btn btn-glass">
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Detailed Answer Review Section -->
+  <section class="review-section">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.5rem;">Answer Review & Explanations</h2>
+      <span style="font-size: 0.88rem; color: var(--text-muted);">{{ quiz.questions|length }} Total Questions</span>
+    </div>
+
+    {% for ua in attempt.user_answers %}
+      {% set q = ua.question %}
+      <div class="review-item glass-panel {{ 'is-correct' if ua.is_correct else 'is-incorrect' }}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
+            Question {{ loop.index }}
+          </span>
+
+          {% if ua.is_correct %}
+            <span class="review-badge correct">&#10003; Correct</span>
+          {% else %}
+            <span class="review-badge incorrect">&#10007; Incorrect</span>
+          {% endif %}
+        </div>
+
+        <h4 style="font-size: 1.15rem; line-height: 1.4; margin-bottom: 1.2rem;">{{ q.question_text }}</h4>
+
+        <!-- Options list with status coloring -->
+        <div class="options-list" style="margin-bottom: 1rem;">
+          {% for letter, opt_text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+            {% set is_selected = (ua.selected_option == letter) %}
+            {% set is_correct_opt = (q.correct_option == letter) %}
+
+            <div class="option-item" style="cursor: default; {{ 'background: rgba(106, 195, 136, 0.15); border-color: rgba(106, 195, 136, 0.4);' if is_correct_opt else ('background: rgba(229, 115, 115, 0.15); border-color: rgba(229, 115, 115, 0.4);' if (is_selected and not is_correct_opt) else '') }}">
+              <div class="option-badge" style="{{ 'background: #6AC388; border-color: #6AC388; color: #111110;' if is_correct_opt else ('background: #E57373; border-color: #E57373; color: #ffffff;' if (is_selected and not is_correct_opt) else '') }}">
+                {{ letter }}
+              </div>
+              <div class="option-text" style="flex: 1;">
+                {{ opt_text }}
+                {% if is_correct_opt %}
+                  <span style="color: #8BE4A6; font-size: 0.82rem; font-weight: 600; margin-left: 0.5rem;">(Correct Answer)</span>
+                {% elif is_selected %}
+                  <span style="color: #FFA4A4; font-size: 0.82rem; font-weight: 600; margin-left: 0.5rem;">(Your Answer)</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Explanation Block -->
+        {% if q.explanation %}
+          <div class="review-explanation">
+            <strong style="color: var(--gold-light); display: block; margin-bottom: 0.25rem;">Why this is correct:</strong>
+            {{ q.explanation }}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}
+

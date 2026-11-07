@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+Authlib
+python-dotenv
+PyMuPDF
+openpyxl
+Pillow
+google-genai
+email-validator
+pytest

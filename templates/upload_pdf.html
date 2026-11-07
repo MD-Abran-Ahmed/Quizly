@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Upload PDF – Quizly{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- GLASS SIDEBAR -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">Q</div>
+      <div class="app-brand" style="font-size: 1.15rem;">
+        Quiz<span class="brand-tag">ly</span>
+      </div>
+      <button type="button" class="sidebar-close-btn" aria-label="Close navigation">&times;</button>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="{{ url_for('dashboard_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Overview</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('documents_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>My Documents</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('upload_page') }}" class="sidebar-link active">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>Generate Quiz</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('quizzes_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>My Quizzes</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('analytics_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Performance</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color: var(--accent-error);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- User Profile Strip -->
+    <div class="sidebar-user">
+      <img src="{{ current_user.avatar_url or ('https://api.dicebear.com/7.x/initials/svg?seed=' + current_user.name + '&backgroundColor=d6bc83&textColor=111110') }}" alt="Avatar" class="user-avatar">
+      <div class="user-details">
+        <div class="user-name">{{ current_user.name }}</div>
+        <div class="user-email">{{ current_user.email }}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN UPLOAD WORKSPACE -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="dashboard-title-group">
+        <div class="glass-badge" style="margin-bottom: 0.6rem;">Step 1 of 2</div>
+        <h1>Upload Study Materials</h1>
+        <p>Drop your lecture notes, chapter outlines, or Q&A PDFs to synthesize MCQs.</p>
+      </div>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </header>
+
+    <!-- Quiz Creation Mode Tabs -->
+    <div class="quiz-mode-tabs" role="tablist">
+      <a href="{{ url_for('upload_page') }}" class="mode-tab active">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Upload PDF (AI)</span>
+      </a>
+      <a href="{{ url_for('create_quiz_page') }}?mode=csv" class="mode-tab">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        <span>Upload CSV</span>
+      </a>
+      <a href="{{ url_for('create_quiz_page') }}" class="mode-tab">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Write Questions</span>
+      </a>
+    </div>
+
+    <div class="upload-container">
+      <!-- Drag & Drop Area -->
+      <div id="dropZone" class="drop-zone glass-panel tilt-card">
+        <input type="file" id="fileInput" accept=".pdf,application/pdf" style="display: none;">
+
+        <div class="drop-icon">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+
+        <h3 class="drop-title">Drag & drop your PDF file here</h3>
+        <p class="drop-subtitle">Supports PDF notes, revision handouts, and Question-Answer sheets (up to 25MB).</p>
+
+        <button type="button" class="btn btn-glass" onclick="document.getElementById('fileInput').click()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Browse Files</span>
+        </button>
+      </div>
+
+      <!-- File Selected Preview Card -->
+      <div id="filePreview" class="file-preview-card">
+        <div class="file-preview-left">
+          <div class="file-badge-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <h5 id="previewFilename" style="color: var(--cream); font-size: 0.95rem; margin-bottom: 0.2rem;">notes.pdf</h5>
+            <span id="previewFilesize" style="color: var(--text-muted); font-size: 0.82rem;">0 KB</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+          <button type="button" id="removeFileBtn" class="btn btn-sm btn-danger btn-icon-only" title="Remove file">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button type="button" id="uploadBtn" class="btn btn-primary">
+            <span>Upload & Analyze PDF</span>
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload & Text Extraction Progress Bar -->
+      <div id="uploadProgressContainer" class="progress-bar-container">
+        <div id="uploadProgressBar" class="progress-bar-fill"></div>
+        <div id="uploadStatusText" style="text-align: center; margin-top: 0.8rem; font-size: 0.84rem; color: var(--gold-light);">Analyzing document...</div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}
+

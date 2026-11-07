@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} – Quizly{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="quiz-viewport" id="takeQuizContainer" data-quiz-id="{{ quiz.id }}">
+
+  <!-- Top Status Bar -->
+  <div class="quiz-top-bar glass-panel">
+    <div style="display: flex; align-items: center; gap: 0.9rem;">
+      <a href="{{ url_for('dashboard_page') }}" class="btn btn-sm btn-glass" style="padding: 0.35rem 0.75rem;" title="Exit Quiz">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </a>
+      <span style="font-size: 0.95rem; font-weight: 600; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">
+        {{ quiz.title }}
+      </span>
+    </div>
+
+    <!-- Timer -->
+    <div class="quiz-timer">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="quizTimerDisplay">00:00</span>
+    </div>
+  </div>
+
+  <!-- Progress Bar Track -->
+  <div class="quiz-progress-track">
+    <div id="quizProgressBar" class="quiz-progress-indicator"></div>
+  </div>
+
+  <!-- Main Question Glass Card -->
+  <div class="question-card glass-panel tilt-card">
+    <div class="question-meta">
+      Question <span id="currentQNum">1</span> of <span id="totalQNum">{{ quiz.num_questions }}</span>
+    </div>
+
+    <h2 id="questionText" class="question-title">
+      <span class="spinner"></span> Loading question...
+    </h2>
+
+    <!-- 4 Options Container -->
+    <div id="optionsContainer" class="options-list">
+      <!-- Injected by quiz.js -->
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Actions -->
+  <div class="quiz-actions">
+    <button type="button" id="prevQBtn" class="btn btn-glass" disabled>
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      <span>Previous</span>
+    </button>
+
+    <div style="display: flex; gap: 0.8rem;">
+      <button type="button" id="nextQBtn" class="btn btn-primary">
+        <span>Next Question</span>
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+
+      <button type="button" id="submitQuizBtn" class="btn btn-primary" style="display: none; background: linear-gradient(135deg, #F4F0E6, #D6BC83);">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Submit Quiz</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Submit Confirmation Modal -->
+  <div id="confirmSubmitModal" class="modal-overlay">
+    <div class="modal-content glass-panel">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(214, 188, 131, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; color: var(--gold-light);">
+        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h3 style="margin-bottom: 0.6rem;">Submit Your Quiz?</h3>
+      <p id="unansweredCount" style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.8rem;">
+        Once submitted, your answers will be locked and evaluated immediately.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 1rem;">
+        <button type="button" id="modalCancelSubmit" class="btn btn-glass">Keep Reviewing</button>
+        <button type="button" id="modalConfirmSubmit" class="btn btn-primary">Yes, Submit Quiz</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}
+

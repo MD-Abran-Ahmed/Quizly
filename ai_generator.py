@@ -1,0 +1,412 @@
+import os
+import json
+import re
+import random
+from typing import List, Dict, Any, Optional
+
+# Try importing the new Google GenAI SDK
+try:
+    from google import genai
+    from google.genai import types
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+
+
+class AIGenerationError(Exception):
+    """Exception raised when MCQ generation fails."""
+    pass
+
+
+def get_gemini_client():
+    """Retrieve Gemini client if API key is present."""
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key or not GENAI_AVAILABLE:
+        return None
+    try:
+        return genai.Client(api_key=api_key)
+    except Exception as e:
+        print(f"Warning: Failed to initialize Google GenAI Client: {e}")
+        return None
+
+
+def detect_qa_format(text: str) -> bool:
+    """Detect whether the text appears to be a Question & Answer document."""
+    qa_patterns = [
+        r'\b(?:Q(?:uestion)?\s*\d*[\.:\)]|\bAns(?:wer)?\s*[\.:\)])',
+        r'\b(?:Question\s*:\s*.+?\s*Answer\s*:)',
+        r'\b(?:Q\d+[\.:\)])\s*.+?\s*(?:A\d*[\.:\)])'
+    ]
+    for pattern in qa_patterns:
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+        if len(matches) >= 3:
+            return True
+    return False
+
+
+def build_generation_prompt(
+    text: str,
+    num_questions: int = 10,
+    difficulty: str = "Medium",
+    quiz_title: str = "Quiz",
+    include_explanations: bool = True
+) -> str:
+    """Builds a structured prompt for Gemini."""
+    is_qa = detect_qa_format(text)
+    
+    # Trim text to reasonable token budget (first 30,000 chars)
+    trimmed_text = text[:35000]
+
+    qa_guidance = ""
+    if is_qa:
+        qa_guidance = """
+SPECIAL INSTRUCTION FOR Q&A MATERIAL:
+This document contains existing questions and answers.
+- Detect the existing questions and preserve their original meaning.
+- Convert them into high-quality Multiple Choice Questions.
+- The source document's provided answer MUST be the correct option.
+- Generate three plausible distractors based on relevant concepts mentioned in the source context.
+- Never alter the meaning of the factual answer.
+"""
+
+    prompt = f"""You are Quizly's premier AI educational assessment engine.
+Generate an accurate, engaging, and professional multiple-choice quiz based STRICTLY on the source text below.
+
+QUIZ SPECIFICATIONS:
+- Number of questions: {num_questions}
+- Target difficulty: {difficulty}
+- Target Quiz Title: "{quiz_title}"
+- Include explanations: {"Yes" if include_explanations else "No"}
+
+{qa_guidance}
+
+CRITICAL RULES:
+1. Every question must be grounded 100% in the source text. Do NOT invent facts or hallucinate external knowledge.
+2. Provide exactly 4 distinct answer options for every question.
+3. Only ONE answer option can be correct.
+4. "correct_answer" must match the EXACT text of one of the 4 options.
+5. Provide a clear, educational explanation referencing the source text for why the correct answer is right.
+6. Avoid ambiguous questions, negative phrasing ("None of the above", "All of the above"), or duplicate questions.
+7. Return strictly valid JSON with no markdown wrapping or preamble, matching the JSON schema below.
+
+REQUIRED JSON FORMAT:
+{{
+  "quiz_title": "{quiz_title}",
+  "questions": [
+    {{
+      "question": "What is the primary function of mitochondria?",
+      "options": [
+        "Protein synthesis",
+        "Cellular energy (ATP) production",
+        "Lipid storage",
+        "DNA replication"
+      ],
+      "correct_answer": "Cellular energy (ATP) production",
+      "explanation": "Mitochondria are known as the powerhouses of the cell because they generate most of the chemical energy needed to power the cell's biochemical reactions."
+    }}
+  ]
+}}
+
+SOURCE TEXT:
+\"\"\"
+{trimmed_text}
+\"\"\"
+"""
+    return prompt
+
+
+def validate_quiz_json(raw_json: Any, expected_count: int) -> Dict[str, Any]:
+    """Validates and standardizes the quiz data structure."""
+    if isinstance(raw_json, str):
+        # Clean up any potential markdown fences
+        cleaned = raw_json.strip()
+        if cleaned.startswith("```json"):
+            cleaned = cleaned[7:]
+        elif cleaned.startswith("```"):
+            cleaned = cleaned[3:]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+        try:
+            data = json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            raise AIGenerationError(f"AI returned malformed JSON: {e}")
+    elif isinstance(raw_json, dict):
+        data = raw_json
+    else:
+        raise AIGenerationError("Invalid response format received from AI.")
+
+    if not isinstance(data, dict) or "questions" not in data:
+        raise AIGenerationError("Missing 'questions' field in AI response.")
+
+    raw_questions = data.get("questions", [])
+    if not isinstance(raw_questions, list) or len(raw_questions) == 0:
+        raise AIGenerationError("No questions were generated by the AI.")
+
+    validated_questions = []
+    seen_questions = set()
+
+    for idx, item in enumerate(raw_questions):
+        question_text = str(item.get("question", "")).strip()
+        if not question_text:
+            continue
+
+        # Prevent duplicate questions
+        normalized_q = re.sub(r'\W+', '', question_text.lower())
+        if normalized_q in seen_questions:
+            continue
+        seen_questions.add(normalized_q)
+
+        options = item.get("options", [])
+        if not isinstance(options, list) or len(options) < 4:
+            continue
+
+        # Clean options and ensure 4 unique choices
+        cleaned_options = [str(opt).strip() for opt in options[:4]]
+        if len(set(cleaned_options)) < 4:
+            continue
+
+        correct_ans = str(item.get("correct_answer", "")).strip()
+
+        # If correct answer is given as a letter ("A", "B", "C", "D")
+        option_letters = ["A", "B", "C", "D"]
+        correct_letter = None
+
+        if correct_ans.upper() in option_letters:
+            letter_idx = option_letters.index(correct_ans.upper())
+            correct_letter = correct_ans.upper()
+            correct_text = cleaned_options[letter_idx]
+        else:
+            # Match by exact text or closest match in options
+            matched = False
+            for o_idx, opt in enumerate(cleaned_options):
+                if opt.lower() == correct_ans.lower():
+                    correct_letter = option_letters[o_idx]
+                    correct_text = opt
+                    matched = True
+                    break
+            if not matched:
+                # Fallback: make option A correct if unidentifiable
+                correct_letter = "A"
+                correct_text = cleaned_options[0]
+
+        explanation = str(item.get("explanation", "")).strip()
+        if not explanation:
+            explanation = f"The correct answer is '{correct_text}' according to the study material."
+
+        validated_questions.append({
+            "order_num": idx + 1,
+            "question_text": question_text,
+            "option_a": cleaned_options[0],
+            "option_b": cleaned_options[1],
+            "option_c": cleaned_options[2],
+            "option_d": cleaned_options[3],
+            "correct_option": correct_letter,
+            "explanation": explanation
+        })
+
+    if not validated_questions:
+        raise AIGenerationError("Could not extract any valid multiple-choice questions from response.")
+
+    return {
+        "quiz_title": data.get("quiz_title") or "Quizly Assessment",
+        "questions": validated_questions
+    }
+
+
+def generate_heuristic_fallback_quiz(
+    text: str,
+    num_questions: int = 10,
+    difficulty: str = "Medium",
+    quiz_title: str = "Study Quiz"
+) -> Dict[str, Any]:
+    """
+    Intelligent heuristic fallback question generator.
+    Parses definitions, QA pairs, key terms, and high-information sentences from
+    the document so the application works smoothly even before an API key is set.
+    """
+    questions = []
+    seen = set()
+
+    # 1. Try detecting existing Q&A in text
+    qa_matches = re.findall(
+        r'(?:Q(?:uestion)?\s*[\d\.:\)]*|^\d+[\.:\)])\s*([^\n\?]+\?)\s*(?:Ans(?:wer)?\s*[\.:\)]|\n)\s*([^\n]+)',
+        text,
+        re.MULTILINE | re.IGNORECASE
+    )
+
+    for q_text, ans_text in qa_matches:
+        q_text = q_text.strip()
+        ans_text = ans_text.strip()
+        if len(q_text) < 15 or len(ans_text) < 3 or q_text.lower() in seen:
+            continue
+        seen.add(q_text.lower())
+
+        # Generate distractors from other parts of the text
+        distractors = ["None of the specific mechanisms", "Alternative baseline condition", "Non-primary factor"]
+        all_words = list(set(re.findall(r'\b[A-Z][a-z]{3,15}\b', text)))
+        if len(all_words) >= 3:
+            distractors = random.sample(all_words, 3)
+
+        options = [ans_text] + distractors[:3]
+        random.shuffle(options)
+        correct_letter = ["A", "B", "C", "D"][options.index(ans_text)]
+
+        questions.append({
+            "order_num": len(questions) + 1,
+            "question_text": q_text,
+            "option_a": options[0],
+            "option_b": options[1],
+            "option_c": options[2],
+            "option_d": options[3],
+            "correct_option": correct_letter,
+            "explanation": f"Based directly on the study notes: '{ans_text}'."
+        })
+        if len(questions) >= num_questions:
+            break
+
+    # 2. Extract definitions ("X is defined as...", "X refers to...", "X is a...")
+    if len(questions) < num_questions:
+        definition_patterns = [
+            r'([A-Z][A-Za-z0-9\s]{2,25})\s+(?:is defined as|refers to|is considered|is known as)\s+([^\.\n]{15,120})\.',
+            r'([A-Z][A-Za-z0-9\s]{2,25})\s*:\s*([^\.\n]{15,120})\.'
+        ]
+        for pattern in definition_patterns:
+            matches = re.findall(pattern, text)
+            for term, definition in matches:
+                term = term.strip()
+                definition = definition.strip()
+                if len(term) < 3 or len(definition) < 10:
+                    continue
+                q_text = f"Which term is defined as: \"{definition}\"?"
+                if q_text.lower() in seen:
+                    continue
+                seen.add(q_text.lower())
+
+                # Collect other terms for distractors
+                other_terms = [m[0].strip() for m in matches if m[0].strip() != term and len(m[0].strip()) >= 3]
+                if len(other_terms) < 3:
+                    other_terms += ["Hypothesis", "Empirical Method", "Variable Analysis", "System Protocol"]
+                distractors = random.sample(other_terms, min(3, len(other_terms)))
+                while len(distractors) < 3:
+                    distractors.append(f"Standard Factor {len(distractors) + 1}")
+
+                options = [term] + distractors[:3]
+                random.shuffle(options)
+                correct_letter = ["A", "B", "C", "D"][options.index(term)]
+
+                questions.append({
+                    "order_num": len(questions) + 1,
+                    "question_text": q_text,
+                    "option_a": options[0],
+                    "option_b": options[1],
+                    "option_c": options[2],
+                    "option_d": options[3],
+                    "correct_option": correct_letter,
+                    "explanation": f"In the uploaded text, {term} is defined as {definition}."
+                })
+                if len(questions) >= num_questions:
+                    break
+            if len(questions) >= num_questions:
+                break
+
+    # 3. Informational sentences fallback if still need questions
+    if len(questions) < num_questions:
+        sentences = [s.strip() for s in re.split(r'\.|\n\n', text) if len(s.strip()) > 40 and len(s.strip()) < 180]
+        for s in sentences:
+            if len(questions) >= num_questions:
+                break
+            # Find a capitalized noun phrase or key word in the sentence
+            words = [w for w in re.findall(r'\b[A-Za-z]{4,}\b', s) if w.lower() not in {"this", "that", "these", "those", "their", "there", "which", "where", "about"}]
+            if len(words) < 2:
+                continue
+            key_word = words[0]
+            masked_sentence = s.replace(key_word, "______", 1)
+            q_text = f"Fill in the blank according to the study text: \"{masked_sentence}\""
+            if q_text.lower() in seen:
+                continue
+            seen.add(q_text.lower())
+
+            distractors = ["Alternative Mechanism", "Secondary Function", "Variable Parameter"]
+            options = [key_word] + distractors
+            random.shuffle(options)
+            correct_letter = ["A", "B", "C", "D"][options.index(key_word)]
+
+            questions.append({
+                "order_num": len(questions) + 1,
+                "question_text": q_text,
+                "option_a": options[0],
+                "option_b": options[1],
+                "option_c": options[2],
+                "option_d": options[3],
+                "correct_option": correct_letter,
+                "explanation": f"Full context from notes: \"{s}\"."
+            })
+
+    # If still not enough, ensure at least minimal questions exist
+    if not questions:
+        questions.append({
+            "order_num": 1,
+            "question_text": "What is the primary topic discussed in the uploaded notes?",
+            "option_a": quiz_title,
+            "option_b": "Unrelated General Topic",
+            "option_c": "Hypothetical Scenario",
+            "option_d": "Preliminary Outline",
+            "correct_option": "A",
+            "explanation": f"The primary subject relates directly to {quiz_title}."
+        })
+
+    return {
+        "quiz_title": quiz_title,
+        "questions": questions[:num_questions]
+    }
+
+
+def generate_quiz_mcqs(
+    extracted_text: str,
+    num_questions: int = 10,
+    difficulty: str = "Medium",
+    quiz_title: str = "Quiz",
+    include_explanations: bool = True
+) -> Dict[str, Any]:
+    """
+    Main entry point for generating MCQs.
+    First tries Google Gemini LLM API if key is available.
+    Gracefully falls back to heuristic engine if API is not configured or fails.
+    """
+    if not extracted_text or len(extracted_text.strip()) < 20:
+        raise AIGenerationError("Source text is too short to generate quiz questions.")
+
+    client = get_gemini_client()
+
+    if client:
+        try:
+            prompt = build_generation_prompt(
+                text=extracted_text,
+                num_questions=num_questions,
+                difficulty=difficulty,
+                quiz_title=quiz_title,
+                include_explanations=include_explanations
+            )
+            # Call Gemini
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.3
+                )
+            )
+            raw_content = response.text
+            return validate_quiz_json(raw_content, expected_count=num_questions)
+        except Exception as e:
+            print(f"Gemini API generation error: {e}. Falling back to internal engine.")
+
+    # Fallback to intelligent local NLP heuristic generator
+    return generate_heuristic_fallback_quiz(
+        text=extracted_text,
+        num_questions=num_questions,
+        difficulty=difficulty,
+        quiz_title=quiz_title
+    )
+

@@ -1,0 +1,171 @@
+/* ==========================================================================
+   QUIZLY – AUTHENTICATION STYLES (LOGIN & REGISTER)
+   ========================================================================== */
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 1.5rem 3rem;
+  position: relative;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(27, 26, 24, 0.72);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-inner), 0 30px 70px rgba(0, 0, 0, 0.65), 0 0 40px rgba(214, 188, 131, 0.08);
+  border-radius: var(--radius-xl);
+  padding: 2.8rem 2.4rem;
+  position: relative;
+  overflow: hidden;
+  animation: cardEntrance 0.6s var(--ease-spring);
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+  opacity: 0.8;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2.2rem;
+}
+
+.auth-header .brand-icon {
+  margin: 0 auto 1.1rem;
+  width: 44px;
+  height: 44px;
+  font-size: 1.25rem;
+  border-radius: 12px;
+}
+
+.auth-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cream);
+  margin-bottom: 0.4rem;
+}
+
+.auth-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+/* Google OAuth Button */
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--glass-border);
+  color: var(--cream);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-inner);
+}
+
+.btn-google:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--glass-border-gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-inner), 0 8px 25px rgba(0, 0, 0, 0.35);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Auth Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.8rem 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+/* Form Styles */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-footer {
+  margin-top: 1.8rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.auth-footer a {
+  color: var(--gold-light);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.auth-footer a:hover {
+  color: var(--cream);
+}
+
+.demo-login-box {
+  margin-top: 1.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(214, 188, 131, 0.07);
+  border: 1px dashed rgba(214, 188, 131, 0.3);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--gold-light);
+}
+
+.demo-login-box a {
+  color: var(--cream);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 2.2rem 1.5rem;
+    border-radius: var(--radius-lg);
+  }
+}
+

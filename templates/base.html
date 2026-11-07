@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Quizly – AI-Powered Study & Quiz Platform{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Ambient Liquid Glass Lighting & Orbs -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="toast toast-{{ 'error' if category in ['error', 'danger'] else ('warning' if category == 'warning' else 'success') }}">
+            <div style="flex-shrink:0;">
+              {% if category in ['error', 'danger'] %}
+                <svg width="20" height="20" fill="none" stroke="#E57373" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {% elif category == 'warning' %}
+                <svg width="20" height="20" fill="none" stroke="#D6BC83" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="8"/></svg>
+              {% else %}
+                <svg width="20" height="20" fill="none" stroke="#6AC388" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% endif %}
+            </div>
+            <div style="font-size:0.9rem; line-height: 1.4;">{{ message }}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% block body_content %}
+    {% if not current_user.is_authenticated and request.endpoint not in ['take_quiz_page'] %}
+      <!-- Public Navbar -->
+      <header class="app-navbar">
+        <a href="{{ url_for('landing_page') }}" class="app-brand">
+          <div class="brand-icon">Q</div>
+          <span>Quiz<span class="brand-tag">ly</span></span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="{{ url_for('landing_page') }}#features" class="nav-link">Features</a></li>
+          <li><a href="{{ url_for('landing_page') }}#how-it-works" class="nav-link">How It Works</a></li>
+          <li><a href="{{ url_for('landing_page') }}#about" class="nav-link">About</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <a href="{{ url_for('auth.login_page') }}" class="btn btn-glass btn-sm">Sign In</a>
+          <a href="{{ url_for('auth.register_page') }}" class="btn btn-primary btn-sm">Get Started</a>
+        </div>
+      </header>
+    {% endif %}
+
+    <main class="page-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if not current_user.is_authenticated and request.endpoint == 'landing_page' %}
+      <!-- Public Footer -->
+      <footer class="app-footer">
+        <div class="footer-container">
+          <div class="footer-brand">
+            <div class="app-brand" style="margin-bottom: 0.8rem;">
+              <div class="brand-icon">Q</div>
+              <span>Quiz<span class="brand-tag">ly</span></span>
+            </div>
+            <p>Empowering students and lifelong learners with Apple-inspired, intelligent AI-generated study assessments from raw notes.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#features">Smart PDF Extraction</a></li>
+              <li><a href="#features">AI MCQ Generation</a></li>
+              <li><a href="#features">Performance Analytics</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+              <li><a href="#how-it-works">User Guide</a></li>
+              <li><a href="#about">Learning Science</a></li>
+              <li><a href="/login">Student Portal</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Security</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <div>&copy; {{ current_year }} Quizly AI Inc. All rights reserved. Designed with Apple-inspired liquid glass aesthetics.</div>
+          <div style="color: var(--text-muted);">Crafted for serious learners</div>
+        </div>
+      </footer>
+    {% endif %}
+  {% endblock %}
+
+  <!-- Core Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
+

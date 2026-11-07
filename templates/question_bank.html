@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}My Quizzes – Quizly{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- GLASS SIDEBAR -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">Q</div>
+      <div class="app-brand" style="font-size: 1.15rem;">
+        Quiz<span class="brand-tag">ly</span>
+      </div>
+      <button type="button" class="sidebar-close-btn" aria-label="Close navigation">&times;</button>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="{{ url_for('dashboard_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Overview</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('documents_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>My Documents</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('upload_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>Generate Quiz</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('quizzes_page') }}" class="sidebar-link active">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>My Quizzes</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('analytics_page') }}" class="sidebar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Performance</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color: var(--accent-error);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- User Profile Strip -->
+    <div class="sidebar-user">
+      <img src="{{ current_user.avatar_url or ('https://api.dicebear.com/7.x/initials/svg?seed=' + current_user.name + '&backgroundColor=d6bc83&textColor=111110') }}" alt="Avatar" class="user-avatar">
+      <div class="user-details">
+        <div class="user-name">{{ current_user.name }}</div>
+        <div class="user-email">{{ current_user.email }}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN QUIZZES VIEW -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="dashboard-title-group">
+        <h1>My Quizzes</h1>
+        <p>Review and retake assessments generated from your notes.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.8rem; flex-shrink: 0;">
+        <button class="mobile-menu-btn" aria-label="Toggle navigation">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Generate New Quiz</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="glass-panel" style="padding: 1.8rem; border-radius: var(--radius-xl);">
+      {% set quizzes = current_user.quizzes %}
+      {% if not quizzes %}
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <h3>No Quizzes Created Yet</h3>
+          <p>Upload a PDF document to generate intelligent multiple-choice questions.</p>
+          <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Create Your First Quiz</a>
+        </div>
+      {% else %}
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                <th style="padding: 1rem 1.2rem;">Quiz Title</th>
+                <th style="padding: 1rem 1.2rem;">Source Document</th>
+                <th style="padding: 1rem 1.2rem;">Questions</th>
+                <th style="padding: 1rem 1.2rem;">Difficulty</th>
+                <th style="padding: 1rem 1.2rem;">Best Score</th>
+                <th style="padding: 1rem 1.2rem; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for quiz in quizzes %}
+                {% set best = quiz.get_best_score(current_user.id) %}
+                {% set last_att = quiz.get_last_attempt(current_user.id) %}
+                <tr id="quiz-card-{{ quiz.id }}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.04); transition: background var(--transition-fast);">
+                  <td style="padding: 1.2rem;">
+                    <div style="font-weight: 600; color: var(--cream); font-size: 0.95rem;">{{ quiz.title }}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">Created {{ quiz.created_at.strftime('%b %d, %Y') }}</div>
+                  </td>
+                  <td style="padding: 1.2rem; color: var(--text-secondary); font-size: 0.88rem;">
+                    {{ quiz.document.original_filename if quiz.document else 'Custom Notes' }}
+                  </td>
+                  <td style="padding: 1.2rem; color: var(--text-secondary); font-size: 0.9rem;">
+                    {{ quiz.num_questions }}
+                  </td>
+                  <td style="padding: 1.2rem;">
+                    <span class="glass-badge" style="font-size: 0.76rem; padding: 0.2rem 0.6rem;">{{ quiz.difficulty }}</span>
+                  </td>
+                  <td style="padding: 1.2rem;">
+                    {% if best is not none %}
+                      <span class="score-badge {{ 'score-high' if best >= 80 else ('score-mid' if best >= 60 else 'score-low') }}">
+                        {{ best|round(1) }}%
+                      </span>
+                    {% else %}
+                      <span class="score-badge score-mid" style="opacity: 0.6;">Not Attempted</span>
+                    {% endif %}
+                  </td>
+                  <td style="padding: 1.2rem; text-align: right;">
+                    <div style="display: inline-flex; gap: 0.6rem; align-items: center;">
+                      {% if last_att %}
+                        <a href="{{ url_for('quiz_result_page', quiz_id=quiz.id, attempt_id=last_att.id) }}" class="btn btn-sm btn-glass" title="Review Last Results">
+                          <span>Review</span>
+                        </a>
+                      {% endif %}
+                      <a href="{{ url_for('take_quiz_page', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
+                        <span>{{ 'Retake' if last_att else 'Take Quiz' }}</span>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-danger btn-icon-only" onclick="deleteQuiz({{ quiz.id }}, '{{ quiz.title|replace("'", "\\'") }}')" title="Delete Quiz">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
+
