@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index?__vercel_route_path__=/$1"
+      "destination": "/api/index"
     }
   ]
 }

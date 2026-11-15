@@ -114,8 +114,6 @@ def create_app():
     # =========================================================================
 
     @app.route('/')
-    @app.route('/api/index')
-    @app.route('/api/index.py')
     def landing_page():
         """Public landing page."""
         if current_user.is_authenticated:
