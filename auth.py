@@ -72,6 +72,11 @@ def google_login():
     redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
     if not redirect_uri:
         base_url = os.getenv('BASE_URL') or os.getenv('APP_URL')
+        if not base_url:
+            vercel_host = os.getenv('VERCEL_PROJECT_PRODUCTION_URL') or os.getenv('VERCEL_URL')
+            if vercel_host:
+                base_url = f"https://{vercel_host}"
+
         if base_url:
             redirect_uri = f"{base_url.rstrip('/')}/auth/google/callback"
         else:
