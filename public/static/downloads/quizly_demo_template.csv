@@ -1,0 +1,7 @@
+question,option_a,option_b,option_c,option_d,correct_option,explanation
+"What is the capital of France?","Paris","London","Berlin","Madrid","A","Paris is the capital and most populous city of France."
+"Which planet is known as the Red Planet?","Venus","Mars","Jupiter","Saturn","B","Mars appears red due to the iron oxide prevalent on its surface."
+"What organelle is known as the powerhouse of the cell?","Nucleus","Ribosome","Mitochondria","Endoplasmic reticulum","C","Mitochondria generate most of the chemical energy needed to power the cell (ATP)."
+"Which language is primarily used for styling web pages?","Python","CSS","JavaScript","HTML","B","CSS (Cascading Style Sheets) describes how HTML elements are to be displayed on screen."
+"What is the chemical symbol for gold?","Ag","Fe","Au","Pb","C","Au comes from the Latin word for gold, 'aurum'."
+
