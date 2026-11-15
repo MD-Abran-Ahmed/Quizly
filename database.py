@@ -211,5 +211,8 @@ class UserAnswer(db.Model):
 def init_db(app):
     db.init_app(app)
     with app.app_context():
-        os.makedirs(app.instance_path, exist_ok=True)
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+        except OSError:
+            pass
         db.create_all()

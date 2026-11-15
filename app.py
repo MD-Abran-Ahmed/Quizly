@@ -31,12 +31,35 @@ def create_app():
 
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'quizly-secure-secret-key-default-2025')
-    os.makedirs(app.instance_path, exist_ok=True)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///quizly.db')
+
+    # Detect Vercel/serverless read-only environment
+    is_serverless = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
+
+    if is_serverless:
+        # Vercel filesystem is read-only except /tmp
+        try:
+            os.makedirs('/tmp/instance', exist_ok=True)
+            app.instance_path = '/tmp/instance'
+        except OSError:
+            pass
+        default_db = 'sqlite:////tmp/quizly.db'
+        default_upload = '/tmp/uploads/pdfs'
+    else:
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+        except OSError:
+            pass
+        default_db = 'sqlite:///quizly.db'
+        default_upload = os.path.join(app.root_path, 'uploads', 'pdfs')
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', default_db)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    upload_folder = os.getenv('UPLOAD_FOLDER', os.path.join(app.root_path, 'uploads', 'pdfs'))
-    os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = os.getenv('UPLOAD_FOLDER', default_upload)
+    try:
+        os.makedirs(upload_folder, exist_ok=True)
+    except OSError:
+        pass
     app.config['UPLOAD_FOLDER'] = upload_folder
     app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 25 * 1024 * 1024))  # 25 MB max
 
@@ -194,6 +217,14 @@ def create_app():
             )
             db.session.add(doc)
             db.session.commit()
+
+            # In serverless environments (like Vercel), remove temporary file from /tmp to conserve disk space
+            if os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ:
+                try:
+                    if os.path.exists(save_path):
+                        os.remove(save_path)
+                except OSError:
+                    pass
 
             return jsonify({
                 'success': True,
@@ -812,4 +843,4 @@ if __name__ == '__main__':
     print(f" Quizly AI-Powered Platform Starting")
     print(f" Web UI: http://127.0.0.1:{port}")
     print(f"=============================================\n")
-    app.run(host='127.0.0.1', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=port, debug=debug)

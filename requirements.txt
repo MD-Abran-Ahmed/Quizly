@@ -9,4 +9,5 @@ openpyxl
 Pillow
 google-genai
 email-validator
+psycopg2-binary
 pytest
