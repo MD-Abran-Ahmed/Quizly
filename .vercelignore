@@ -1,0 +1,14 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+tests
+uploads/pdfs/*
+!uploads/pdfs/.gitkeep
+instance
+*.db
+*.sqlite3
+.env
+.env.local
+.git
+.gitignore

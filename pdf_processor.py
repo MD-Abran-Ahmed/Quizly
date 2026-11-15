@@ -1,6 +1,7 @@
 import os
 import re
-import fitz  # PyMuPDF
+from pypdf import PdfReader
+from pypdf.errors import PyPdfError
 
 class PDFProcessingError(Exception):
     """Custom exception for PDF processing errors."""
@@ -63,29 +64,25 @@ def extract_text_from_pdf(file_path: str) -> dict:
         raise PDFProcessingError(f"Error reading file: {str(e)}")
 
     try:
-        doc = fitz.open(file_path)
+        reader = PdfReader(file_path)
     except Exception as e:
         raise PDFProcessingError(f"Failed to parse PDF document. It may be password-protected or corrupt: {str(e)}")
 
-    page_count = len(doc)
+    page_count = len(reader.pages)
     if page_count == 0:
-        doc.close()
         raise PDFProcessingError("The PDF document contains no pages.")
 
     extracted_pages = []
     total_images = 0
 
-    for page_num in range(page_count):
+    for page in reader.pages:
         try:
-            page = doc[page_num]
-            page_text = page.get_text("text")
+            page_text = page.extract_text()
             if page_text:
                 extracted_pages.append(page_text)
-            total_images += len(page.get_images())
+            total_images += len(page.images)
         except Exception:
             continue
-
-    doc.close()
 
     raw_text = "\n\n".join(extracted_pages)
     cleaned_text = clean_extracted_text(raw_text)

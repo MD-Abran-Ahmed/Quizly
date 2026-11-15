@@ -27,7 +27,12 @@ from pdf_processor import extract_text_from_pdf, allowed_file, PDFProcessingErro
 from ai_generator import generate_quiz_mcqs, AIGenerationError
 
 def create_app():
-    app = Flask(__name__)
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(base_dir, 'templates'),
+        static_folder=os.path.join(base_dir, 'static')
+    )
 
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'quizly-secure-secret-key-default-2025')

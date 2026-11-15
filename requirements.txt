@@ -4,10 +4,7 @@ Flask-Login
 Flask-WTF
 Authlib
 python-dotenv
-PyMuPDF
-openpyxl
-Pillow
+pypdf
 google-genai
 email-validator
 psycopg2-binary
-pytest

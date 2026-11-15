@@ -7,7 +7,6 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pytest
-import fitz
 from app import create_app
 from database import db, User, Document, Quiz, Question, QuizAttempt, UserAnswer
 
@@ -50,23 +49,10 @@ def auth_client(client, app):
     return client
 
 def create_sample_pdf_bytes():
-    """Create an in-memory PDF using PyMuPDF with rich text content."""
-    doc = fitz.open()
-    page = doc.new_page()
-    text = (
-        "Cellular Biology Overview\n\n"
-        "Mitochondria are membrane-bound cell organelles that generate most of the chemical energy "
-        "needed to power the biochemical reactions of eukaryotic cells. Chemical energy produced by the "
-        "mitochondria is stored in a small molecule called adenosine triphosphate or ATP.\n\n"
-        "The nucleus is an organelle found in eukaryotic cells that contains the genetic material or DNA.\n\n"
-        "Ribosomes are macromolecular machines found within all cells that perform biological protein synthesis.\n\n"
-        "Question: What molecule stores chemical energy produced by the mitochondria?\n"
-        "Answer: Adenosine triphosphate (ATP)\n"
-    )
-    page.insert_text((50, 72), text, fontsize=11)
-    pdf_bytes = doc.write()
-    doc.close()
-    return pdf_bytes
+    """Read sample test PDF fixture with rich biology text content."""
+    sample_path = os.path.join(os.path.dirname(__file__), 'sample.pdf')
+    with open(sample_path, 'rb') as f:
+        return f.read()
 
 def test_landing_page(client):
     res = client.get('/')
