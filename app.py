@@ -120,6 +120,13 @@ def create_app():
             return redirect(url_for('dashboard_page'))
         return render_template('index.html')
 
+    @app.route('/api/index')
+    def vercel_debug_dump():
+        """Debug route to inspect Vercel environment."""
+        return jsonify({
+            k: str(v) for k, v in request.environ.items() if not k.startswith('wsgi.') and 'SECRET' not in k and 'KEY' not in k
+        })
+
     @app.route('/dashboard')
     @login_required
     def dashboard_page():
