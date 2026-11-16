@@ -1,10 +1,5 @@
 # 🧠 Quizly — AI-Powered Quiz & Assessment Platform
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Flask](https://img.shields.io/badge/framework-Flask%203.x-lightgrey.svg)](https://flask.palletsprojects.com/)
-[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-orange.svg)](https://aistudio.google.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
 **Quizly** is a modern, intelligent quiz generation and self-assessment web application built with **Flask**, **SQLAlchemy**, and **Google Gemini AI**. Designed with an **Apple-inspired "Liquid Glass"** dark aesthetic, Quizly turns study notes and documents into interactive multiple-choice tests in seconds.
 
 ---
